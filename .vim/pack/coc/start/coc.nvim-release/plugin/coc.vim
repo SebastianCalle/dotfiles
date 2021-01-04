@@ -251,7 +251,7 @@ function! s:Enable(initialize)
     endif
     if s:is_vim
       if exists('##DirChanged')
-        autocmd DirChanged        * call s:Autocmd('DirChanged', expand('<afile>'))
+        autocmd DirChanged        * call s:Autocmd('DirChanged', getcwd())
       endif
       if exists('##TerminalOpen')
         autocmd TerminalOpen      * call s:Autocmd('TermOpen', +expand('<abuf>'))
@@ -261,8 +261,10 @@ function! s:Enable(initialize)
       autocmd TermOpen          * call s:Autocmd('TermOpen', +expand('<abuf>'))
       autocmd TermClose         * call s:Autocmd('TermClose', +expand('<abuf>'))
     endif
-    autocmd WinLeave            * call coc#util#clearmatches(get(w:, 'coc_matchids', []))
-    autocmd BufWinLeave         * call s:Autocmd('BufWinLeave', +expand('<abuf>'), win_getid())
+    autocmd WinLeave            * call coc#util#clear_highlights()
+    autocmd WinLeave            * call s:Autocmd('WinLeave', win_getid())
+    autocmd WinEnter            * call s:Autocmd('WinEnter', win_getid())
+    autocmd BufWinLeave         * call s:Autocmd('BufWinLeave', +expand('<abuf>'), bufwinid(+expand('<abuf>')))
     autocmd BufWinEnter         * call s:Autocmd('BufWinEnter', +expand('<abuf>'), win_getid())
     autocmd FileType            * call s:Autocmd('FileType', expand('<amatch>'), +expand('<abuf>'))
     autocmd CompleteDone        * call s:Autocmd('CompleteDone', get(v:, 'completed_item', {}))
@@ -308,6 +310,7 @@ function! s:Hi() abort
   hi default CocHintSign     ctermfg=Blue    guifg=#15aabf
   hi default CocSelectedText ctermfg=Red     guifg=#fb4934
   hi default CocCodeLens     ctermfg=Gray    guifg=#999999
+  hi default link CocMenuSel          PmenuSel
   hi default link CocErrorFloat       CocErrorSign
   hi default link CocWarningFloat     CocWarningSign
   hi default link CocInfoFloat        CocInfoSign
@@ -397,11 +400,6 @@ endfunction
 command! -nargs=? CocDiagnostics  :call s:OpenDiagnostics(<f-args>)
 command! -nargs=0 CocInfo         :call s:ShowInfo()
 command! -nargs=0 CocOpenLog      :call coc#rpc#notify('openLog',  [])
-command! -nargs=0 CocListResume   :call coc#rpc#notify('listResume', [])
-command! -nargs=0 CocPrev         :call coc#rpc#notify('listPrev', [])
-command! -nargs=0 CocNext         :call coc#rpc#notify('listNext', [])
-command! -nargs=0 CocFirst        :call coc#rpc#notify('listFirst', [])
-command! -nargs=0 CocLast         :call coc#rpc#notify('listLast', [])
 command! -nargs=0 CocDisable      :call s:Disable()
 command! -nargs=0 CocEnable       :call s:Enable(0)
 command! -nargs=0 CocConfig       :call s:OpenConfig()
@@ -411,8 +409,13 @@ command! -nargs=0 CocStart        :call coc#rpc#start_server()
 command! -nargs=0 CocRebuild      :call coc#util#rebuild()
 command! -nargs=+ -complete=custom,s:SearchOptions  CocSearch    :call coc#rpc#notify('search', [<f-args>])
 command! -nargs=+ -complete=custom,s:ExtensionList  CocUninstall :call CocActionAsync('uninstallExtension', <f-args>)
-command! -nargs=* -complete=custom,coc#list#options CocList      :call coc#rpc#notify('openList',  [<f-args>])
 command! -nargs=* -complete=custom,s:CommandList -range CocCommand :call coc#rpc#notify('runCommand', [<f-args>])
+command! -nargs=* -complete=custom,coc#list#options CocList      :call coc#rpc#notify('openList',  [<f-args>])
+command! -nargs=? -complete=custom,coc#list#names CocListResume   :call coc#rpc#notify('listResume', [<f-args>])
+command! -nargs=? -complete=custom,coc#list#names CocPrev         :call coc#rpc#notify('listPrev', [<f-args>])
+command! -nargs=? -complete=custom,coc#list#names CocNext         :call coc#rpc#notify('listNext', [<f-args>])
+command! -nargs=? -complete=custom,coc#list#names CocFirst        :call coc#rpc#notify('listFirst', [<f-args>])
+command! -nargs=? -complete=custom,coc#list#names CocLast         :call coc#rpc#notify('listLast', [<f-args>])
 command! -nargs=* -range CocAction :call coc#rpc#notify('codeActionRange', [<line1>, <line2>, <f-args>])
 command! -nargs=* -range CocFix    :call coc#rpc#notify('codeActionRange', [<line1>, <line2>, 'quickfix'])
 command! -nargs=0 CocUpdate       :call coc#util#update_extensions(1)
@@ -422,34 +425,35 @@ command! -nargs=* -bar -complete=custom,s:InstallOptions CocInstall   :call coc#
 call s:Enable(1)
 call s:Hi()
 
-vnoremap <Plug>(coc-range-select)          :<C-u>call       CocAction('rangeSelect',     visualmode(), v:true)<CR>
-vnoremap <Plug>(coc-range-select-backward) :<C-u>call       CocAction('rangeSelect',     visualmode(), v:false)<CR>
-nnoremap <Plug>(coc-range-select)          :<C-u>call       CocAction('rangeSelect',     '', v:true)<CR>
+vnoremap <silent> <Plug>(coc-range-select)          :<C-u>call       CocActionAsync('rangeSelect',     visualmode(), v:true)<CR>
+vnoremap <silent> <Plug>(coc-range-select-backward) :<C-u>call       CocActionAsync('rangeSelect',     visualmode(), v:false)<CR>
+nnoremap <Plug>(coc-range-select)          :<C-u>call       CocActionAsync('rangeSelect',     '', v:true)<CR>
 nnoremap <Plug>(coc-codelens-action)       :<C-u>call       CocActionAsync('codeLensAction')<CR>
-vnoremap <Plug>(coc-format-selected)       :<C-u>call       CocActionAsync('formatSelected',     visualmode())<CR>
-vnoremap <Plug>(coc-codeaction-selected)   :<C-u>call       CocActionAsync('codeAction',         visualmode())<CR>
+vnoremap <silent> <Plug>(coc-format-selected)       :<C-u>call       CocActionAsync('formatSelected',     visualmode())<CR>
+vnoremap <silent> <Plug>(coc-codeaction-selected)   :<C-u>call       CocActionAsync('codeAction',         visualmode())<CR>
 nnoremap <Plug>(coc-codeaction-selected)   :<C-u>set        operatorfunc=<SID>CodeActionFromSelected<CR>g@
 nnoremap <Plug>(coc-codeaction)            :<C-u>call       CocActionAsync('codeAction',         '')<CR>
 nnoremap <Plug>(coc-codeaction-line)       :<C-u>call       CocActionAsync('codeAction',         'n')<CR>
-nnoremap <Plug>(coc-rename)                :<C-u>call       CocActionAsync('rename')<CR>
-nnoremap <Plug>(coc-format-selected)       :<C-u>set        operatorfunc=<SID>FormatFromSelected<CR>g@
-nnoremap <Plug>(coc-format)                :<C-u>call       CocActionAsync('format')<CR>
-nnoremap <Plug>(coc-diagnostic-info)       :<C-u>call       CocActionAsync('diagnosticInfo')<CR>
-nnoremap <Plug>(coc-diagnostic-next)       :<C-u>call       CocActionAsync('diagnosticNext')<CR>
-nnoremap <Plug>(coc-diagnostic-prev)       :<C-u>call       CocActionAsync('diagnosticPrevious')<CR>
-nnoremap <Plug>(coc-diagnostic-next-error) :<C-u>call       CocActionAsync('diagnosticNext',     'error')<CR>
-nnoremap <Plug>(coc-diagnostic-prev-error) :<C-u>call       CocActionAsync('diagnosticPrevious', 'error')<CR>
-nnoremap <Plug>(coc-definition)            :<C-u>call       CocActionAsync('jumpDefinition')<CR>
-nnoremap <Plug>(coc-declaration)           :<C-u>call       CocActionAsync('jumpDeclaration')<CR>
-nnoremap <Plug>(coc-implementation)        :<C-u>call       CocActionAsync('jumpImplementation')<CR>
-nnoremap <Plug>(coc-type-definition)       :<C-u>call       CocActionAsync('jumpTypeDefinition')<CR>
-nnoremap <Plug>(coc-references)            :<C-u>call       CocActionAsync('jumpReferences')<CR>
-nnoremap <Plug>(coc-openlink)              :<C-u>call       CocActionAsync('openLink')<CR>
-nnoremap <Plug>(coc-fix-current)           :<C-u>call       CocActionAsync('doQuickfix')<CR>
-nnoremap <Plug>(coc-float-hide)            :<C-u>call       coc#util#float_hide()<CR>
-nnoremap <Plug>(coc-float-jump)            :<c-u>call       coc#util#float_jump()<cr>
-nnoremap <Plug>(coc-command-repeat)        :<C-u>call       CocAction('repeatCommand')<CR>
-nnoremap <Plug>(coc-refactor)              :<C-u>call       CocActionAsync('refactor')<CR>
+nnoremap <silent> <Plug>(coc-rename)                :<C-u>call       CocActionAsync('rename')<CR>
+nnoremap <silent> <Plug>(coc-format-selected)       :<C-u>set        operatorfunc=<SID>FormatFromSelected<CR>g@
+nnoremap <silent> <Plug>(coc-format)                :<C-u>call       CocActionAsync('format')<CR>
+nnoremap <silent> <Plug>(coc-diagnostic-info)       :<C-u>call       CocActionAsync('diagnosticInfo')<CR>
+nnoremap <silent> <Plug>(coc-diagnostic-next)       :<C-u>call       CocActionAsync('diagnosticNext')<CR>
+nnoremap <silent> <Plug>(coc-diagnostic-prev)       :<C-u>call       CocActionAsync('diagnosticPrevious')<CR>
+nnoremap <silent> <Plug>(coc-diagnostic-next-error) :<C-u>call       CocActionAsync('diagnosticNext',     'error')<CR>
+nnoremap <silent> <Plug>(coc-diagnostic-prev-error) :<C-u>call       CocActionAsync('diagnosticPrevious', 'error')<CR>
+nnoremap <silent> <Plug>(coc-definition)            :<C-u>call       CocActionAsync('jumpDefinition')<CR>
+nnoremap <silent> <Plug>(coc-declaration)           :<C-u>call       CocActionAsync('jumpDeclaration')<CR>
+nnoremap <silent> <Plug>(coc-implementation)        :<C-u>call       CocActionAsync('jumpImplementation')<CR>
+nnoremap <silent> <Plug>(coc-type-definition)       :<C-u>call       CocActionAsync('jumpTypeDefinition')<CR>
+nnoremap <silent> <Plug>(coc-references)            :<C-u>call       CocActionAsync('jumpReferences')<CR>
+nnoremap <silent> <Plug>(coc-references-used)       :<C-u>call       CocActionAsync('jumpUsed')<CR>
+nnoremap <silent> <Plug>(coc-openlink)              :<C-u>call       CocActionAsync('openLink')<CR>
+nnoremap <silent> <Plug>(coc-fix-current)           :<C-u>call       CocActionAsync('doQuickfix')<CR>
+nnoremap <silent> <Plug>(coc-float-hide)            :<C-u>call       coc#util#float_hide()<CR>
+nnoremap <silent> <Plug>(coc-float-jump)            :<c-u>call       coc#util#float_jump()<cr>
+nnoremap <silent> <Plug>(coc-command-repeat)        :<C-u>call       CocAction('repeatCommand')<CR>
+nnoremap <silent> <Plug>(coc-refactor)              :<C-u>call       CocActionAsync('refactor')<CR>
 inoremap <silent>                          <Plug>CocRefresh <C-r>=coc#_complete()<CR>
 
 nnoremap <silent> <Plug>(coc-cursors-operator) :<C-u>set operatorfunc=<SID>CursorRangeFromSelected<CR>g@

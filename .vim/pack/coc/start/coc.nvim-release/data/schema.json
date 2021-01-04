@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-06/schema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Configuration file for coc.nvim",
   "additionalProperties": false,
   "definitions": {
@@ -39,6 +39,11 @@
           "type": "boolean",
           "default": false,
           "description": "Disable completion feature for this languageserver."
+        },
+        "formatterPriority": {
+          "type": "number",
+          "default": 0,
+          "description": "Priority of this languageserver's fomatter."
         },
         "env": {
           "type": "object",
@@ -136,6 +141,7 @@
         "disableDynamicRegister": {},
         "disableDiagnostics": {},
         "disableCompletion": {},
+        "formatterPriority": {},
         "enable": {},
         "rootPatterns": {},
         "requireRootPattern": {},
@@ -200,6 +206,7 @@
         "disableSnippetCompletion": {},
         "disableDiagnostics": {},
         "disableCompletion": {},
+        "formatterPriority": {},
         "rootPatterns": {},
         "requireRootPattern": {},
         "ignoredRootPaths": {},
@@ -250,6 +257,7 @@
         "disableSnippetCompletion": {},
         "disableDiagnostics": {},
         "disableCompletion": {},
+        "formatterPriority": {},
         "rootPatterns": {},
         "requireRootPattern": {},
         "ignoredRootPaths": {},
@@ -268,12 +276,18 @@
     "http.proxy": {
       "type": "string",
       "default": "",
-      "description": "http proxy uri, used for extensions that send request. Format: proxy-server:1234 or user:password@prox-server:1234 with auth support"
+      "pattern": "^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$",
+      "description": "The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables."
     },
     "http.proxyStrictSSL": {
       "type": "boolean",
       "description": "Controls whether the proxy server certificate should be verified against the list of supplied CAs",
       "default": true
+    },
+    "http.proxyAuthorization": {
+      "type": ["null", "string"],
+      "description": "The value to send as the `Proxy-Authorization` header for every network request.",
+      "default": null
     },
     "npm.binPath": {
       "type": "string",
@@ -497,6 +511,11 @@
       "default": "hint",
       "enum": ["hint", "information", "warning", "error"]
     },
+    "diagnostic.locationlistUpdate": {
+      "type": "boolean",
+      "description": "Update locationlist on diagnostics change, only works with locationlist opened by :CocDiagnostics command and first window of associated buffer.",
+      "default": true
+    },
     "diagnostic.checkCurrentLine": {
       "type": "boolean",
       "description": "When enabled, show all diagnostics of current line if there are none at the current position.",
@@ -709,15 +728,10 @@
       "default": 100,
       "description": "Debouce time for input change on interactive mode."
     },
-    "list.maxHeight": {
+    "list.height": {
       "type": "number",
       "default": 10,
-      "description": "Maximum height of list window."
-    },
-    "list.minHeight": {
-      "type": "number",
-      "default": 1,
-      "description": "Minimum height of list window."
+      "description": "Height of split list window."
     },
     "list.signOffset": {
       "type": "number",
@@ -733,11 +747,6 @@
       "type": "boolean",
       "default": true,
       "description": "Enable extended search mode which allows multiple search patterns delimited by spaces."
-    },
-    "list.autoResize": {
-      "type": "boolean",
-      "default": true,
-      "description": "Enable auto resize feature."
     },
     "list.limitLines": {
       "type": "number",
@@ -938,6 +947,16 @@
     "coc.preferences.snippets.enable": {
       "type": "boolean",
       "description": "Set to false to disable snippets support.",
+      "default": true
+    },
+    "coc.preferences.floatQuickpick": {
+      "type": "boolean",
+      "description": "Set to false to disable float/popup support for quickpick menu, won't work on vim without float or popup window support.",
+      "default": true
+    },
+    "coc.preferences.promptInput": {
+      "type": "boolean",
+      "description": "Use prompt buffer in float window for user input, works on neovim >= 0.5.0 only.",
       "default": true
     },
     "coc.source.around.enable": {

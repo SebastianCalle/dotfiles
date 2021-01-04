@@ -1,5 +1,10 @@
 set nocompatible              " be iMproved, required
-filetype off                  " required
+filetype plugin indent on
+" store backup, undo, and swap files in temp directory
+
+" Quit stranger characters
+let &t_TI = ""
+let &t_TE = ""
 
 let mapleader = ","
 set rtp+=~/.vim/bundle/Vundle.vim
@@ -9,7 +14,6 @@ call vundle#begin()
 
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
-
 Plugin 'flazz/vim-colorschemes'
 Plugin 'joshdick/onedark.vim'
 Plugin 'kien/ctrlp.vim'
@@ -32,6 +36,11 @@ Plugin 'w0rp/ale'
 Plugin 'junegunn/fzf'
 Plugin 'junegunn/fzf.vim'
 Plugin 'zivyangll/git-blame.vim'
+Plugin 'yggdroot/indentline'
+Plugin 'maxmellon/vim-jsx-pretty'
+Plugin 'tpope/vim-commentary'
+Plugin 'othree/html5.vim'
+Plugin 'easymotion/vim-easymotion'
 "Plugin 'neoclide/coc.nvim', {'do': 'yarn install --frozen-lockfile'}
 "Plugin 'neoclide/coc-python', {'do': 'yarn install --frozen-lockfile'}
 "Plugin 'neoclide/coc-tsserver', {'do': 'yarn install --frozen-lockfile'}
@@ -80,12 +89,25 @@ nmap <silent> <leader>gp <Plug>(coc-diagnostic-prev-error)
 nmap <silent> <leader>gn <Plug>(coc-diagnostic-next-error)
 nmap <F6> <Plug>(ale_fix)
 nnoremap <leader>cr :CocRestart
+" Use K to show documentation in preview window
+nnoremap <silent> K :call <SID>show_documentation()<CR>
 
 filetype plugin indent on    " required
 " Put your non-Plugin stuff after this line
 "
 " For example ftdetect/html.vim
 au! BufRead,BufNewFile *.html set ft=html | call jinja#AdjustFiletype()
+
+" <Leader>f{char} to move to {char}
+map  <Leader>f <Plug>(easymotion-bd-f)
+nmap <Leader>f <Plug>(easymotion-overwin-f)
+
+" s{char}{char} to move to {char}{char}
+nmap s <Plug>(easymotion-overwin-f2)
+
+" Move to word
+map  <Leader>w <Plug>(easymotion-bd-w)
+nmap <Leader>w <Plug>(easymotion-overwin-w)
 
 set wrap
 set tabstop=4
@@ -95,6 +117,8 @@ set autoindent
 set smartindent
 set foldmethod=indent
 
+" IndentLine
+autocmd Filetype python let g:indentLine_enabled = 0
 
 " Vim's auto indentation feature does not work properly with text copied from outside of Vim. Press the <F2> key to toggle paste mode on/off.
 nnoremap <F2> :set invpaste paste?<CR>
